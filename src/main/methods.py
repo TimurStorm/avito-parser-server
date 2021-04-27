@@ -2,7 +2,6 @@ from random import randint
 
 
 async def send_message(text, pk, VK_API):
-
     await VK_API.messages.send(
         user_id=pk,
         message=text,

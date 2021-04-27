@@ -1,22 +1,24 @@
-from sanic.response import json
-from methods import send_message
 import aiovk
 from aiovk.drivers import HttpDriver
-
-
-def get_api(app):
-    return aiovk.API(
-        aiovk.TokenSession(
-            "165a143791d5431d7b9a3e628b7baaaa7fcaaac794da2bd3ed97c9e1f0c64e6a65bed9508541ea8a3a2c5",
-            driver=HttpDriver(loop=app.loop),
-        )
-    )
+from sanic.response import json
+from src.main.methods import send_message
+from src.main.settings import VK_TOKEN
 
 
 def setup_routes(app):
+
+    @app.listener("after_server_start")
+    def get_api(app, loop):
+        global VK_API
+        VK_API = aiovk.API(
+            aiovk.TokenSession(
+                VK_TOKEN,
+                driver=HttpDriver(loop=loop),
+            )
+        )
+
     @app.post("/vk")
     async def foo_handler(request):
-        VK_API = get_api(app)
         try:
             app.add_task(
                 send_message(

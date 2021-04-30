@@ -1,6 +1,6 @@
-from src.main.router import setup_routes
-from src.main.settings import app, IP, PORT
+from router import setup_vk_mailing
+from settings import APP, IP, PORT
 
 if __name__ == "__main__":
-    setup_routes(app)
-    app.run(host=IP, port=PORT)
+    setup_vk_mailing()
+    APP.run(host=IP, port=PORT)

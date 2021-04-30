@@ -1,0 +1,27 @@
+version: '3.1'
+
+volumes:
+  pg_project:
+    driver: local
+services:
+  sanic:
+    image: sanic
+    container_name: sanic
+    volumes:
+      - .:/code
+    ports:
+      - "80:8000"
+    links:
+      - pg_db
+    restart: always
+
+  pg_db:
+    image: postgres
+    container_name: postgres
+    restart: always
+    environment:
+      - POSTGRES_PASSWORD=000168154
+      - POSTGRES_USER=Tim
+      - POSTGRES_DB=stage
+    volumes:
+      - pg_project:/var/lib/postgresql/data

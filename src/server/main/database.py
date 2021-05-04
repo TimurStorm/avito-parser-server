@@ -7,14 +7,14 @@ async def connect_to_db():
         user="Tim", password="000168154", database="stage", host="postgres", port="5432"
     )
     async with conn.transaction():
-        exist = await table_is_exist(conn=conn, table="vk_requests")
-        if not exist:
-            await conn.execute(
-                """CREATE TABLE vk_requests(
-                               id INT NOT NULL,
-                               code TEXT NOT NULL,
-                               date DATE NOT NULL);"""
-            )
+        await conn.execute(
+            """CREATE TABLE if not exists users(
+                           email TEXT NOT NULL,
+                           password TEXT NOT NULL,
+                           username TEXT NOT NULL,
+                           vk_id INT NULL, 
+                           vk_token TEXT NULL);"""
+        )
     return conn
 
 
@@ -27,7 +27,8 @@ async def write_to_db(table: str, conn, values: list):
 
 async def read_table_from_db(table: str, conn):
     try:
-        values = await conn.fetch(f"SELECT * FROM {table}")
+        rows = await conn.fetch(f"SELECT * FROM {table}")
+        values = [row.values() for row in rows]
         pprint(values)
     except Exception as error:
         print(f"ERROR: {error}")
@@ -35,12 +36,4 @@ async def read_table_from_db(table: str, conn):
 
 async def disconnect_to_db(conn):
     await conn.close()
-
-
-async def table_is_exist(conn, table: str):
-    try:
-        await conn.fetchrow(f"SELECT * FROM {table}")
-        return True
-    except Exception:
-        return False
 

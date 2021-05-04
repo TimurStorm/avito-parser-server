@@ -4,6 +4,10 @@ volumes:
   pg_project:
     driver: local
 services:
+  bot:
+    image: bot
+    container_name: bot
+    restart: always
   sanic:
     image: sanic
     container_name: sanic

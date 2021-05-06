@@ -1,14 +1,17 @@
 from aiovk.drivers import HttpDriver
 from aiovk.sessions import TokenSession
 from aiovk.api import API
+from sanic import Blueprint
+
+from bcrypt import checkpw
 
 from sanic.response import json
-from sanic_jwt import exceptions
+from sanic_jwt import Initialize
 
 from methods import send_message
 from models import User
 from settings import VK_TOKEN, APP
-from database import write_to_db, read_table_from_db, connect_to_db
+from database import write_to_db, connect_to_db
 
 CONN = None
 
@@ -61,7 +64,7 @@ def setup_vk_mailing():
         user_info = user_info[0]
         user = User(*[value for value in user_info.values()])
 
-        if password != user.password:
+        if not checkpw(password=password.encode("utf-8"), hashed_password=user.password.encode("utf-8")):
             return json({"text": "Password is incorrect."}, status=400)
         return json({"text": "Everything is okay",
                      "user": {
@@ -69,6 +72,8 @@ def setup_vk_mailing():
                          "email": user.email,
                          "vk_id": user.vk_id
                      }}, status=200)
+
+    Initialize(Blueprint("log"), APP, authenticate=authenticate)
 
     @APP.post("/reg")
     async def registration(request, *args, **kwargs):
@@ -87,7 +92,10 @@ def setup_vk_mailing():
                          "user": {
                              "username": user.username,
                              "email": user.email,
-                             "vk_id": user.vk_id
+                             "vk_id": user.vk_id,
+                             "password": user.password
                          }}, status=200)
         else:
             return json({"text": "User with this email is exist"}, status=400)
+
+    Initialize(Blueprint("reg"), APP, authenticate=registration)

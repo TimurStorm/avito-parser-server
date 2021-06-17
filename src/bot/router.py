@@ -1,12 +1,13 @@
 from aiovk import TokenSession, API
 from aiovk.longpoll import BotsLongPoll
-from asyncio import get_event_loop
-from pprint import pprint
-from settings import ID, TOKEN
+
+from sanic import json
+
+from settings import ID, TOKEN, APP
 from random import randint
 
 
-async def send_message(text, pk, api, keyboard=None):
+async def send_message(text, pk, keyboard=None):
     try:
         if keyboard is None:
             await api.messages.send(
@@ -23,30 +24,26 @@ async def send_message(text, pk, api, keyboard=None):
         return error
 
 
-async def main():
-    session = TokenSession(access_token=TOKEN)
-    api = API(session)
+async def bots_long_poll():
     lp = BotsLongPoll(api, ID)
     async for event in lp.iter():
         if event["type"] == "message_new":
-
-            pprint(event)
 
             obj = event["object"]
             user_id = obj["user_id"]
             message = obj["body"].lower()
 
+            print(f"{user_id}: {message}")
+
             start = f"""Привет! Это бот для рассылки объявлений! Здесь ты сможешь получать сообщения о новых 
             объявлениях из приложения. Ещё не устновил его? Ты можешь это сделать здесь: {
             'ссылка на скачиванивание на сайте'}"""
             # ПОЛЬЗОВАТЕЛЬ НАЖИМАЕТ ПРОДОЛЖИТЬ
-            next1 = f"""Для того чтобы установить функцию рассылки необходимо:\n 
-            1)Указать id аккаунта в настройках приложения и нажать кнопку "проверка"\n(твой id: {user_id})\n
-            2)Ввести код подтверждения, указанный здесь """
+            nextt = "Рассылка успешно установлена!"
             text = ""
             next_keyboard = """
             {
-                "one_time": true,
+                "one_time": false,
                 "buttons": [
                     [{
                     "action": {
@@ -55,23 +52,45 @@ async def main():
                       "label": "Установить рассылку"
                     },
                     "color": "primary"
+                  },
+                  {
+                    "action": {
+                      "type": "text",
+                      "payload": "{\\"button\\": \\"4\\"}",
+                      "label": "Узнать id"
+                    },
+                    "color": "primary"
                   }]
                 ]
               } """
-            keyboard = None
+            keyboard = next_keyboard
             if message == "начать":
-                keyboard = next_keyboard
                 text = start
             if message == "установить рассылку":
-                text = next1
-            if message == "начать" or message == "установить рассылку":
-                resp = await send_message(
-                    api=api, pk=user_id, text=text, keyboard=keyboard
-                )
+                text = nextt
+            if message == "узнать id":
+                text = f"Твой id: {user_id}"
+            if message in ["начать", "установить рассылку", "узнать id"]:
+                resp = await send_message(pk=user_id, text=text, keyboard=keyboard)
                 if resp is not None:
                     print(f"ERROR: {resp}")
 
 
-if __name__ == "__main__":
-    loop = get_event_loop()
-    loop.run_until_complete(main())
+def setup_router():
+    @APP.listener("after_server_start")
+    async def set_api(app, loop):
+        session = TokenSession(access_token=TOKEN)
+        global api
+        api = API(session)
+        APP.add_task(bots_long_poll())
+
+    @APP.post("/send")
+    async def send(request, *args, **kwargs):
+        try:
+            text = request.args["text"][0]
+            pk = request.args["pk"][0]
+            await send_message(text=text, pk=pk)
+            return json({"text": "Everything okay"}, status=200)
+        except Exception as e:
+            print(e)
+            return json({"text": "Bad request"}, status=400)

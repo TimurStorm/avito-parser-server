@@ -36,4 +36,3 @@ async def read_table_from_db(table: str, conn):
 
 async def disconnect_to_db(conn):
     await conn.close()
-

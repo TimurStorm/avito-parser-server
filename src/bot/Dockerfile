@@ -1,7 +1,7 @@
 # установка базового образа (host OS)
 FROM python:3.8
 # установка рабочей директории в контейнере
-WORKDIR /usr/src/app
+WORKDIR /usr/src/bot
 # копирование файла зависимостей в рабочую директорию
 # установка зависимостей
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -16,8 +16,9 @@ RUN pip install --upgrade pip
 RUN pip install aiovk
 RUN pip install asyncio
 RUN pip install python-dotenv
+RUN pip install sanic
 
 # копирование содержимого локальной директории src в рабочую директорию
 COPY . .
 # команда, выполняемая при запуске контейнера
-CMD [ "python", "./main.py" ]
+CMD [ "python", "./server.py" ]

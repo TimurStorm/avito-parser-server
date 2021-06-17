@@ -8,13 +8,15 @@ services:
     image: bot
     container_name: bot
     restart: always
+    ports:
+      - "70:7000"
   sanic:
     image: sanic
     container_name: sanic
     volumes:
       - .:/code
     ports:
-      - "80:8000"
+      - "443:8000"
     links:
       - pg_db
     restart: always
